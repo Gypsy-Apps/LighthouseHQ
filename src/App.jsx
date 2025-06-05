@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import Properties from './Properties';
 
 function NavLink({ to, children }) {
   const location = useLocation();
@@ -75,10 +76,6 @@ function App() {
 
 function Dashboard() {
   return <h1 className="text-3xl font-bold text-center">Dashboard</h1>;
-}
-
-function Properties() {
-  return <h1 className="text-3xl font-bold text-center">Properties</h1>;
 }
 
 function PropertyDetails() {
