@@ -75,7 +75,7 @@ function App() {
 }
 
 function Dashboard() {
-  return <h1 className="text-3xl font-bold text-center">Dashboard</h1>;
+  return <h1 className="text-3xl font-bold text-center">Welcome to LighthouseHQ 🚀 Updated!</h1>;
 }
 
 function PropertyDetails() {
