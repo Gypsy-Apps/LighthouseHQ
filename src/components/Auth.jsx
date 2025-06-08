@@ -3,10 +3,12 @@ import { supabase } from '../supabaseClient';
 
 const Auth = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
 
   const getErrorMessage = (error) => {
     if (error.message === 'Invalid login credentials') {
@@ -22,9 +24,19 @@ const Auth = ({ onAuthSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setMessage(null);
 
     try {
-      if (isLogin) {
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        
+        if (error) throw error;
+        
+        setMessage('Password reset email sent! Please check your inbox and follow the instructions to reset your password.');
+        setEmail('');
+      } else if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -54,12 +66,44 @@ const Auth = ({ onAuthSuccess }) => {
     }
   };
 
+  const resetForm = () => {
+    setError(null);
+    setMessage(null);
+    setEmail('');
+    setPassword('');
+  };
+
+  const handleModeChange = (newMode) => {
+    resetForm();
+    if (newMode === 'forgot') {
+      setIsForgotPassword(true);
+      setIsLogin(false);
+    } else if (newMode === 'login') {
+      setIsForgotPassword(false);
+      setIsLogin(true);
+    } else if (newMode === 'signup') {
+      setIsForgotPassword(false);
+      setIsLogin(false);
+    }
+  };
+
+  const getTitle = () => {
+    if (isForgotPassword) return 'Reset your password';
+    return isLogin ? 'Sign in to your account' : 'Create your account';
+  };
+
+  const getButtonText = () => {
+    if (loading) return 'Loading...';
+    if (isForgotPassword) return 'Send reset email';
+    return isLogin ? 'Sign in' : 'Sign up';
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isLogin ? 'Sign in to your account' : 'Create your account'}
+            {getTitle()}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Welcome to LighthouseHQ
@@ -70,6 +114,12 @@ const Auth = ({ onAuthSuccess }) => {
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
               <div className="text-red-800 text-sm">{error}</div>
+            </div>
+          )}
+
+          {message && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-3">
+              <div className="text-green-800 text-sm">{message}</div>
             </div>
           )}
           
@@ -84,29 +134,45 @@ const Auth = ({ onAuthSuccess }) => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm ${
+                  isForgotPassword ? 'rounded-md' : 'rounded-t-md'
+                }`}
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            {!isForgotPassword && (
+              <div>
+                <label htmlFor="password" className="sr-only">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            )}
           </div>
+
+          {isLogin && !isForgotPassword && (
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => handleModeChange('forgot')}
+                className="text-sm text-blue-600 hover:text-blue-500"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          )}
 
           <div>
             <button
@@ -114,18 +180,28 @@ const Auth = ({ onAuthSuccess }) => {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {loading ? 'Loading...' : (isLogin ? 'Sign in' : 'Sign up')}
+              {getButtonText()}
             </button>
           </div>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-blue-600 hover:text-blue-500 text-sm"
-            >
-              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-            </button>
+          <div className="text-center space-y-2">
+            {isForgotPassword ? (
+              <button
+                type="button"
+                onClick={() => handleModeChange('login')}
+                className="text-blue-600 hover:text-blue-500 text-sm"
+              >
+                Back to sign in
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleModeChange(isLogin ? 'signup' : 'login')}
+                className="text-blue-600 hover:text-blue-500 text-sm"
+              >
+                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              </button>
+            )}
           </div>
         </form>
       </div>
