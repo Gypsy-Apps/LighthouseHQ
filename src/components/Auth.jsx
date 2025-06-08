@@ -8,6 +8,16 @@ const Auth = ({ onAuthSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const getErrorMessage = (error) => {
+    if (error.message === 'Invalid login credentials') {
+      return 'Invalid email or password. Please double-check your credentials and try again.';
+    }
+    if (error.message === 'User already registered') {
+      return 'An account with this email already exists. Please sign in instead or use a different email address.';
+    }
+    return error.message;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -38,7 +48,7 @@ const Auth = ({ onAuthSuccess }) => {
         }
       }
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
