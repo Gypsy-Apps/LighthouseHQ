@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { supabase } from './supabaseClient';
 import Properties from './Properties';
 import TasksPage from './pages/TasksPage';
+import Auth from './components/Auth';
 
 function NavLink({ to, children }) {
   const location = useLocation();
@@ -21,6 +23,45 @@ function NavLink({ to, children }) {
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const handleAuthSuccess = () => {
+    // Auth state will be updated automatically by the listener
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth onAuthSuccess={handleAuthSuccess} />;
+  }
 
   return (
     <Router>
@@ -58,6 +99,22 @@ function App() {
                 <NavLink to="/reports">Reports</NavLink>
               </li>
             </ul>
+            
+            {/* User info and sign out */}
+            <div className="mt-8 pt-8 border-t border-gray-700">
+              <div className="text-sm text-gray-300 mb-2">
+                Signed in as:
+              </div>
+              <div className="text-sm font-medium mb-3 truncate">
+                {user.email}
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="w-full text-left p-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors text-sm"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </nav>
 
