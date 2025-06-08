@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import Properties from './Properties';
+import TasksPage from './pages/TasksPage';
 
 function NavLink({ to, children }) {
   const location = useLocation();
@@ -48,6 +49,9 @@ function App() {
                 <NavLink to="/properties">Properties</NavLink>
               </li>
               <li>
+                <NavLink to="/tasks">Tasks</NavLink>
+              </li>
+              <li>
                 <NavLink to="/property-details">Property Details</NavLink>
               </li>
               <li>
@@ -63,6 +67,7 @@ function App() {
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/properties" element={<Properties />} />
+              <Route path="/tasks" element={<TasksPage />} />
               <Route path="/property-details" element={<PropertyDetails />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/" element={<Dashboard />} />
