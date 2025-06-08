@@ -53,11 +53,19 @@ const AddTaskDialog = ({ isOpen, onClose, onTaskAdded }) => {
     setError(null);
 
     try {
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('You must be logged in to create tasks');
+      }
+
       const taskData = {
         ...formData,
         date: new Date().toISOString(),
         due_date: formData.due_date ? new Date(formData.due_date).toISOString() : new Date().toISOString(),
-        property_id: formData.property_id || null
+        property_id: formData.property_id || null,
+        user_id: user.id // Explicitly set the user_id
       };
 
       const { error } = await supabase
