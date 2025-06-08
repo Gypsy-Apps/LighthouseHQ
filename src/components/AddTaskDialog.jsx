@@ -61,10 +61,15 @@ const AddTaskDialog = ({ isOpen, onClose, onTaskAdded }) => {
         throw new Error('You must be logged in to create tasks');
       }
 
+      // Calculate due date: use user input or default to 7 days from today
+      const dueDate = formData.due_date
+        ? new Date(formData.due_date).toISOString()
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days later
+
       const taskData = {
         ...formData,
         date: new Date().toISOString(),
-        due_date: formData.due_date ? new Date(formData.due_date).toISOString() : new Date().toISOString(),
+        due_date: dueDate,
         property_id: formData.property_id || null,
         user_id: user.id // Set user_id to the authenticated user's ID
       };
