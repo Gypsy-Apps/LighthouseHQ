@@ -26,7 +26,19 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const isDevelopment = import.meta.env.DEV;
+
   useEffect(() => {
+    // Check for development mock user first
+    if (isDevelopment) {
+      const mockUser = localStorage.getItem('dev-mock-user');
+      if (mockUser) {
+        setUser(JSON.parse(mockUser));
+        setLoading(false);
+        return;
+      }
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -41,14 +53,21 @@ function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isDevelopment]);
 
   const handleSignOut = async () => {
+    // Clear development mock user if it exists
+    if (isDevelopment) {
+      localStorage.removeItem('dev-mock-user');
+    }
+    
     await supabase.auth.signOut();
+    setUser(null);
   };
 
   const handleAuthSuccess = () => {
-    // Auth state will be updated automatically by the listener
+    // Auth state will be updated automatically by the listener or mock user check
+    window.location.reload(); // Refresh to ensure proper state
   };
 
   if (loading) {
@@ -107,6 +126,11 @@ function App() {
               </div>
               <div className="text-sm font-medium mb-3 truncate">
                 {user.email}
+                {isDevelopment && user.id === 'dev-user-123' && (
+                  <span className="block text-xs text-yellow-400 mt-1">
+                    (Development Mode)
+                  </span>
+                )}
               </div>
               <button
                 onClick={handleSignOut}

@@ -16,6 +16,8 @@ const AddTaskDialog = ({ isOpen, onClose, onTaskAdded }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const isDevelopment = import.meta.env.DEV;
+
   useEffect(() => {
     if (isOpen) {
       fetchProperties();
@@ -47,17 +49,39 @@ const AddTaskDialog = ({ isOpen, onClose, onTaskAdded }) => {
     }));
   };
 
+  const getCurrentUser = () => {
+    // Check for development mock user
+    if (isDevelopment) {
+      const mockUser = localStorage.getItem('dev-mock-user');
+      if (mockUser) {
+        return JSON.parse(mockUser);
+      }
+    }
+    
+    // Return null if no user found (this shouldn't happen in normal flow)
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Get the current user using the latest Supabase syntax
-      const { data, error: userError } = await supabase.auth.getUser();
-      const user = data?.user;
+      let user = getCurrentUser();
       
-      if (userError || !user) {
+      // If no mock user in development, try to get real user
+      if (!user && !isDevelopment) {
+        const { data, error: userError } = await supabase.auth.getUser();
+        user = data?.user;
+        
+        if (userError || !user) {
+          throw new Error('You must be logged in to create tasks');
+        }
+      }
+
+      // If still no user (shouldn't happen), throw error
+      if (!user) {
         throw new Error('You must be logged in to create tasks');
       }
 
